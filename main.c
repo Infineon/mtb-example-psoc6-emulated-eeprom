@@ -1,8 +1,6 @@
 /******************************************************************************
 * File Name: main.c
 *
-* Version: 1.0
-*
 * Description: This is the source code for the PSoC 6 MCU Emulated EEPROM 
                Example for ModusToolbox.
 *
@@ -10,7 +8,7 @@
 *
 *
 *******************************************************************************
-* (c) 2019, Cypress Semiconductor Corporation. All rights reserved.
+* (c) 2019-2020, Cypress Semiconductor Corporation. All rights reserved.
 *******************************************************************************
 * This software, including source code, documentation and related materials
 * ("Software"), is owned by Cypress Semiconductor Corporation or one of its
@@ -79,7 +77,7 @@
 #define EEPROM_SIZE             (256u)
 #define BLOCKING_WRITE          (1u)
 #define REDUNDANT_COPY          (1u)
-#define WEAR_LEVELLING_FACTOR    (2u)
+#define WEAR_LEVELLING_FACTOR   (2u)
 
 /* Set the macro FLASH_REGION_TO_USE to either USER_FLASH or
  * EMULATED_EEPROM_FLASH to specify the region of the flash used for
@@ -125,7 +123,7 @@ const uint8_t EepromStorage[Em_EEPROM_PHYSICAL_SIZE] = {0u};
 /* RAM arrays for holding EEPROM read and write data respectively. */
 uint8_t eepromReadArray[LOGICAL_EEPROM_SIZE];
 uint8_t eepromWriteArray[LOGICAL_EEPROM_SIZE] = { 0x50, 0x6F, 0x77, 0x65, 0x72, 0x20, 0x43, 0x79, 0x63, 0x6C, 0x65, 0x23, 0x20, 0x30, 0x30};
-                                                 /* P     o     w     e     r           C     y     c     l     e     #           0     0*/
+                                                /* P, o, w, e, r, , C, y, c, l, e, #, , 0, 0 */
 
 
 /*******************************************************************************
