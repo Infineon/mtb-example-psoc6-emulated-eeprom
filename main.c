@@ -8,22 +8,23 @@
 *
 *
 *******************************************************************************
-* (c) 2019-2020, Cypress Semiconductor Corporation. All rights reserved.
-*******************************************************************************
-* This software, including source code, documentation and related materials
-* ("Software"), is owned by Cypress Semiconductor Corporation or one of its
-* subsidiaries ("Cypress") and is protected by and subject to worldwide patent
-* protection (United States and foreign), United States copyright laws and
-* international treaty provisions. Therefore, you may use this Software only
-* as provided in the license agreement accompanying the software package from
-* which you obtained this Software ("EULA").
+* Copyright 2021, Cypress Semiconductor Corporation (an Infineon company) or
+* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
+* This software, including source code, documentation and related
+* materials ("Software") is owned by Cypress Semiconductor Corporation
+* or one of its affiliates ("Cypress") and is protected by and subject to
+* worldwide patent protection (United States and foreign),
+* United States copyright laws and international treaty provisions.
+* Therefore, you may use this Software only as provided in the license
+* agreement accompanying the software package from which you
+* obtained this Software ("EULA").
 * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
-* non-transferable license to copy, modify, and compile the Software source
-* code solely for use in connection with Cypress's integrated circuit products.
-* Any reproduction, modification, translation, compilation, or representation
-* of this Software except as specified above is prohibited without the express
-* written permission of Cypress.
+* non-transferable license to copy, modify, and compile the Software
+* source code solely for use in connection with Cypress's
+* integrated circuit products.  Any reproduction, modification, translation,
+* compilation, or representation of this Software except as specified
+* above is prohibited without the express written permission of Cypress.
 *
 * Disclaimer: THIS SOFTWARE IS PROVIDED AS-IS, WITH NO WARRANTY OF ANY KIND,
 * EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, NONINFRINGEMENT, IMPLIED
@@ -34,10 +35,11 @@
 * not authorize its products for use in any products where a malfunction or
 * failure of the Cypress product may reasonably be expected to result in
 * significant property damage, injury or death ("High Risk Product"). By
-* including Cypress's product in a High Risk Product, the manufacturer of such
-* system or application assumes all risk of such use and in doing so agrees to
-* indemnify Cypress against all liability.
+* including Cypress's product in a High Risk Product, the manufacturer
+* of such system or application assumes all risk of such use and in doing
+* so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
+
 
 #include "cyhal.h"
 #include "cybsp.h"
@@ -112,13 +114,30 @@ cy_stc_eeprom_config_t Em_EEPROM_config =
 
 cy_stc_eeprom_context_t Em_EEPROM_context;
 
-#if (FLASH_REGION_TO_USE)
+#if (EMULATED_EEPROM_FLASH == FLASH_REGION_TO_USE)
 CY_SECTION(".cy_em_eeprom")
 #endif /* #if(FLASH_REGION_TO_USE) */
 CY_ALIGN(CY_EM_EEPROM_FLASH_SIZEOF_ROW)
 
+#if (defined(TARGET_CY8CKIT_064B0S2_4343W) && (USER_FLASH == FLASH_REGION_TO_USE ))
+/* When CY8CKIT-064B0S2-4343W is selected as the target and EEPROM array is
+ * stored in user flash, the EEPROM array is placed in a fixed location in
+ * memory. The adddress of the fixed location can be arrived at by determining
+ * the amount of flash consumed by the application. In this case, the example
+ * consumes approximately 104000 bytes for the above target using GCC_ARM 
+ * compiler and Debug configuration. The start address specified in the linker
+ * script is 0x10000000, providing an offset of approximately 32 KB, the EEPROM
+ * array is placed at 0x10021000 in this example. Note that changing the
+ * compiler and the build configuration will change the amount of flash
+ * consumed. As a resut, you will need to modify the value accordingly. Among
+ * the supported compilers and build configurations, the amount of flash
+ * consumed is highest for GCC_ARM compiler and Debug build configuration.
+ */
+#define APP_DEFINED_EM_EEPROM_LOCATION_IN_FLASH  (0x10021000)
+#else
 /* EEPROM storage in user flash or emulated EEPROM flash. */
 const uint8_t EepromStorage[Em_EEPROM_PHYSICAL_SIZE] = {0u};
+#endif /* #if (defined(TARGET_CY8CKIT_064B0S2_4343W)) */
 
 /* RAM arrays for holding EEPROM read and write data respectively. */
 uint8_t eepromReadArray[LOGICAL_EEPROM_SIZE];
@@ -182,7 +201,12 @@ int main(void)
     printf("EmEEPROM demo \r\n");
 
     /* Initialize the flash start address in EEPROM configuration structure. */
-    Em_EEPROM_config.userFlashStartAddr = (uint32_t)EepromStorage;
+#if (defined(TARGET_CY8CKIT_064B0S2_4343W) && (USER_FLASH == FLASH_REGION_TO_USE ))
+    Em_EEPROM_config.userFlashStartAddr = (uint32_t) APP_DEFINED_EM_EEPROM_LOCATION_IN_FLASH;
+#else
+    Em_EEPROM_config.userFlashStartAddr = (uint32_t) EepromStorage;
+#endif
+
     eepromReturnValue = Cy_Em_EEPROM_Init(&Em_EEPROM_config, &Em_EEPROM_context);
     HandleError(eepromReturnValue, "Emulated EEPROM Initialization Error \r\n");
 
