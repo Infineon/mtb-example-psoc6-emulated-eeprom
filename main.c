@@ -71,28 +71,32 @@
 /* EEPROM Configuration details. All the sizes mentioned are in bytes.
  * For details on how to configure these values refer to cy_em_eeprom.h. The
  * library documentation is provided in Em EEPROM API Reference Manual. The user
- * can access it from the project explorer at Application_name-> libs->
- * emeeprom-> docs.
+ * access it from ModusToolbox IDE Quick Panel > Documentation> 
+ * Cypress Em_EEPROM middleware API reference manual
  */
-
-#define Em_EEPROM_PHYSICAL_SIZE (2048u)
 #define EEPROM_SIZE             (256u)
 #define BLOCKING_WRITE          (1u)
 #define REDUNDANT_COPY          (1u)
 #define WEAR_LEVELLING_FACTOR   (2u)
+#define SIMPLE_MODE             (0u)
 
 /* Set the macro FLASH_REGION_TO_USE to either USER_FLASH or
  * EMULATED_EEPROM_FLASH to specify the region of the flash used for
  * emulated EEPROM.
  */
-
 #define USER_FLASH              (0u)
 #define EMULATED_EEPROM_FLASH   (1u)
+
+#if (defined(TARGET_CY8CKIT_062S4))
+/* The target kit CY8CKIT-062S4 doesn't have a dedicated EEPROM flash
+ * region so this example will demonstrate emulation in the user flash region
+ */
+#define FLASH_REGION_TO_USE     USER_FLASH
+#else
 #define FLASH_REGION_TO_USE     EMULATED_EEPROM_FLASH
+#endif
 
 #define GPIO_LOW                (0u)
-#define STATUS_SUCCESS          (0u)
-
 
 /*******************************************************************************
  * Function Prototypes
@@ -136,7 +140,8 @@ CY_ALIGN(CY_EM_EEPROM_FLASH_SIZEOF_ROW)
 #define APP_DEFINED_EM_EEPROM_LOCATION_IN_FLASH  (0x10021000)
 #else
 /* EEPROM storage in user flash or emulated EEPROM flash. */
-const uint8_t EepromStorage[Em_EEPROM_PHYSICAL_SIZE] = {0u};
+const uint8_t EepromStorage[CY_EM_EEPROM_GET_PHYSICAL_SIZE(EEPROM_SIZE, SIMPLE_MODE, WEAR_LEVELLING_FACTOR, REDUNDANT_COPY)] = {0u};
+
 #endif /* #if (defined(TARGET_CY8CKIT_064B0S2_4343W)) */
 
 /* RAM arrays for holding EEPROM read and write data respectively. */
@@ -295,17 +300,26 @@ int main(void)
 *******************************************************************************/
 void HandleError(uint32_t status, char *message)
 {
-    if(STATUS_SUCCESS != status)
-    {
-        cyhal_gpio_write((cyhal_gpio_t) CYBSP_USER_LED, false);
-        __disable_irq();
 
-        if(NULL != message)
+    if(CY_EM_EEPROM_SUCCESS != status)
+    {
+        if(CY_EM_EEPROM_REDUNDANT_COPY_USED != status)
         {
-            printf("%s",message);
+            cyhal_gpio_write((cyhal_gpio_t) CYBSP_USER_LED, false);
+            __disable_irq();
+
+            if(NULL != message)
+            {
+                printf("%s",message);
+            }
+
+            while(1u);
+        }
+        else
+        {
+            printf("%s","Main copy is corrupted. Redundant copy in Emulated EEPROM is used \r\n");
         }
 
-        while(1u);
     }
 }
 
