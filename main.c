@@ -87,9 +87,9 @@
 #define USER_FLASH              (0u)
 #define EMULATED_EEPROM_FLASH   (1u)
 
-#if (defined(TARGET_CY8CKIT_062S4))
-/* The target kit CY8CKIT-062S4 doesn't have a dedicated EEPROM flash
- * region so this example will demonstrate emulation in the user flash region
+#if ((defined(TARGET_CY8CKIT_062S4))||(defined(TARGET_CY8CPROTO_064B0S3)))
+/* The target kit CY8CKIT-062S4 and CY8CPROTO-064B0S3 doesn't have a dedicated EEPROM
+ * flash region so this example will demonstrate emulation in the user flash region
  */
 #define FLASH_REGION_TO_USE     USER_FLASH
 #else
@@ -123,8 +123,8 @@ CY_SECTION(".cy_em_eeprom")
 #endif /* #if(FLASH_REGION_TO_USE) */
 CY_ALIGN(CY_EM_EEPROM_FLASH_SIZEOF_ROW)
 
-#if (defined(TARGET_CY8CKIT_064B0S2_4343W) && (USER_FLASH == FLASH_REGION_TO_USE ))
-/* When CY8CKIT-064B0S2-4343W is selected as the target and EEPROM array is
+#if ((defined(TARGET_CY8CKIT_064B0S2_4343W)||(defined(TARGET_CY8CPROTO_064B0S3))) && (USER_FLASH == FLASH_REGION_TO_USE ))
+/* When CY8CKIT-064B0S2-4343W and CY8CPROTO-064B0S3 is selected as the target and EEPROM array is
  * stored in user flash, the EEPROM array is placed in a fixed location in
  * memory. The adddress of the fixed location can be arrived at by determining
  * the amount of flash consumed by the application. In this case, the example
@@ -206,7 +206,7 @@ int main(void)
     printf("EmEEPROM demo \r\n");
 
     /* Initialize the flash start address in EEPROM configuration structure. */
-#if (defined(TARGET_CY8CKIT_064B0S2_4343W) && (USER_FLASH == FLASH_REGION_TO_USE ))
+#if ((defined(TARGET_CY8CKIT_064B0S2_4343W)||(defined(TARGET_CY8CPROTO_064B0S3))) && (USER_FLASH == FLASH_REGION_TO_USE ))
     Em_EEPROM_config.userFlashStartAddr = (uint32_t) APP_DEFINED_EM_EEPROM_LOCATION_IN_FLASH;
 #else
     Em_EEPROM_config.userFlashStartAddr = (uint32_t) EepromStorage;
