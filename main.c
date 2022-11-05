@@ -8,7 +8,7 @@
 *
 *
 *******************************************************************************
-* Copyright 2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2021-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -87,13 +87,11 @@
 #define USER_FLASH              (0u)
 #define EMULATED_EEPROM_FLASH   (1u)
 
-#if ((defined(TARGET_CY8CKIT_062S4))||(defined(TARGET_CY8CPROTO_064B0S3)))
-/* The target kit CY8CKIT-062S4 and CY8CPROTO-064B0S3 doesn't have a dedicated EEPROM
- * flash region so this example will demonstrate emulation in the user flash region
- */
-#define FLASH_REGION_TO_USE     USER_FLASH
-#else
+#if CY_EM_EEPROM_SIZE
+/* CY_EM_EEPROM_SIZE to determine whether the target has a dedicated EEPROM region or not */
 #define FLASH_REGION_TO_USE     EMULATED_EEPROM_FLASH
+#else
+#define FLASH_REGION_TO_USE     USER_FLASH
 #endif
 
 #define GPIO_LOW                (0u)
@@ -101,7 +99,7 @@
 /*******************************************************************************
  * Function Prototypes
  ******************************************************************************/
-void HandleError(uint32_t status, char *message);
+void handle_error(uint32_t status, char *message);
 
 
 /*******************************************************************************
@@ -123,8 +121,8 @@ CY_SECTION(".cy_em_eeprom")
 #endif /* #if(FLASH_REGION_TO_USE) */
 CY_ALIGN(CY_EM_EEPROM_FLASH_SIZEOF_ROW)
 
-#if ((defined(TARGET_CY8CKIT_064B0S2_4343W)||(defined(TARGET_CY8CPROTO_064B0S3))) && (USER_FLASH == FLASH_REGION_TO_USE ))
-/* When CY8CKIT-064B0S2-4343W and CY8CPROTO-064B0S3 is selected as the target and EEPROM array is
+#if (defined(CY_DEVICE_SECURE) && (USER_FLASH == FLASH_REGION_TO_USE ))
+/* When CY8CKIT-064B0S2-4343W is selected as the target and EEPROM array is
  * stored in user flash, the EEPROM array is placed in a fixed location in
  * memory. The adddress of the fixed location can be arrived at by determining
  * the amount of flash consumed by the application. In this case, the example
@@ -140,13 +138,13 @@ CY_ALIGN(CY_EM_EEPROM_FLASH_SIZEOF_ROW)
 #define APP_DEFINED_EM_EEPROM_LOCATION_IN_FLASH  (0x10021000)
 #else
 /* EEPROM storage in user flash or emulated EEPROM flash. */
-const uint8_t EepromStorage[CY_EM_EEPROM_GET_PHYSICAL_SIZE(EEPROM_SIZE, SIMPLE_MODE, WEAR_LEVELLING_FACTOR, REDUNDANT_COPY)] = {0u};
+const uint8_t eeprom_storage[CY_EM_EEPROM_GET_PHYSICAL_SIZE(EEPROM_SIZE, SIMPLE_MODE, WEAR_LEVELLING_FACTOR, REDUNDANT_COPY)] = {0u};
 
-#endif /* #if (defined(TARGET_CY8CKIT_064B0S2_4343W)) */
+#endif /* #if (defined(CY_DEVICE_SECURE)) */
 
 /* RAM arrays for holding EEPROM read and write data respectively. */
-uint8_t eepromReadArray[LOGICAL_EEPROM_SIZE];
-uint8_t eepromWriteArray[LOGICAL_EEPROM_SIZE] = { 0x50, 0x6F, 0x77, 0x65, 0x72, 0x20, 0x43, 0x79, 0x63, 0x6C, 0x65, 0x23, 0x20, 0x30, 0x30};
+uint8_t eeprom_read_array[LOGICAL_EEPROM_SIZE];
+uint8_t eeprom_write_array[LOGICAL_EEPROM_SIZE] = { 0x50, 0x6F, 0x77, 0x65, 0x72, 0x20, 0x43, 0x79, 0x63, 0x6C, 0x65, 0x23, 0x20, 0x30, 0x30};
                                                 /* P, o, w, e, r, , C, y, c, l, e, #, , 0, 0 */
 
 
@@ -166,7 +164,7 @@ int main(void)
 {
     int count;
     /* Return status for EEPROM. */
-    cy_en_em_eeprom_status_t eepromReturnValue;
+    cy_en_em_eeprom_status_t eeprom_return_value;
 
     cy_rslt_t result;
 
@@ -206,73 +204,73 @@ int main(void)
     printf("EmEEPROM demo \r\n");
 
     /* Initialize the flash start address in EEPROM configuration structure. */
-#if ((defined(TARGET_CY8CKIT_064B0S2_4343W)||(defined(TARGET_CY8CPROTO_064B0S3))) && (USER_FLASH == FLASH_REGION_TO_USE ))
+#if (defined(CY_DEVICE_SECURE) && (USER_FLASH == FLASH_REGION_TO_USE ))
     Em_EEPROM_config.userFlashStartAddr = (uint32_t) APP_DEFINED_EM_EEPROM_LOCATION_IN_FLASH;
 #else
-    Em_EEPROM_config.userFlashStartAddr = (uint32_t) EepromStorage;
+    Em_EEPROM_config.userFlashStartAddr = (uint32_t) eeprom_storage;
 #endif
 
-    eepromReturnValue = Cy_Em_EEPROM_Init(&Em_EEPROM_config, &Em_EEPROM_context);
-    HandleError(eepromReturnValue, "Emulated EEPROM Initialization Error \r\n");
+    eeprom_return_value = Cy_Em_EEPROM_Init(&Em_EEPROM_config, &Em_EEPROM_context);
+    handle_error(eeprom_return_value, "Emulated EEPROM Initialization Error \r\n");
 
 
     /* Read 15 bytes out of EEPROM memory. */
-    eepromReturnValue = Cy_Em_EEPROM_Read(LOGICAL_EEPROM_START, eepromReadArray,
+    eeprom_return_value = Cy_Em_EEPROM_Read(LOGICAL_EEPROM_START, eeprom_read_array,
                                           LOGICAL_EEPROM_SIZE, &Em_EEPROM_context);
-    HandleError(eepromReturnValue, "Emulated EEPROM Read failed \r\n");
+    handle_error(eeprom_return_value, "Emulated EEPROM Read failed \r\n");
 
 
     /* If first byte of EEPROM is not 'P', then write the data for initializing
      * the EEPROM content.
      */
-    if(ASCII_P != eepromReadArray[0])
+    if(ASCII_P != eeprom_read_array[0])
     {
         /* Write initial data to EEPROM. */
-        eepromReturnValue = Cy_Em_EEPROM_Write(LOGICAL_EEPROM_START,
-                                               eepromWriteArray,
+        eeprom_return_value = Cy_Em_EEPROM_Write(LOGICAL_EEPROM_START,
+                                               eeprom_write_array,
                                                LOGICAL_EEPROM_SIZE,
                                                &Em_EEPROM_context);
-        HandleError(eepromReturnValue, "Emulated EEPROM Write failed \r\n");
+        handle_error(eeprom_return_value, "Emulated EEPROM Write failed \r\n");
     }
 
     else
     {
         /* The EEPROM content is valid. Increment Counter by 1. */
-        eepromReadArray[RESET_COUNT_LOCATION+1]++;
+        eeprom_read_array[RESET_COUNT_LOCATION+1]++;
 
         /* Counter is in ASCII, so handle overflow. */
-        if(eepromReadArray[RESET_COUNT_LOCATION+1] > ASCII_NINE)
+        if(eeprom_read_array[RESET_COUNT_LOCATION+1] > ASCII_NINE)
         {
             /* Set lower digit to zero. */
-            eepromReadArray[RESET_COUNT_LOCATION+1] = ASCII_ZERO;
+            eeprom_read_array[RESET_COUNT_LOCATION+1] = ASCII_ZERO;
             /* Increment upper digit. */
-            eepromReadArray[RESET_COUNT_LOCATION]++;
+            eeprom_read_array[RESET_COUNT_LOCATION]++;
 
             /* only increment to 99. */
-            if(eepromReadArray[RESET_COUNT_LOCATION] > ASCII_NINE)
+            if(eeprom_read_array[RESET_COUNT_LOCATION] > ASCII_NINE)
             {
-                eepromReadArray[RESET_COUNT_LOCATION] = ASCII_NINE;
-                eepromReadArray[RESET_COUNT_LOCATION+1] = ASCII_NINE;
+                eeprom_read_array[RESET_COUNT_LOCATION] = ASCII_NINE;
+                eeprom_read_array[RESET_COUNT_LOCATION+1] = ASCII_NINE;
             }
         }
 
         /* Only update the two count values in the EEPROM. */
-        eepromReturnValue = Cy_Em_EEPROM_Write(RESET_COUNT_LOCATION,
-                                               &eepromReadArray[RESET_COUNT_LOCATION],
+        eeprom_return_value = Cy_Em_EEPROM_Write(RESET_COUNT_LOCATION,
+                                               &eeprom_read_array[RESET_COUNT_LOCATION],
                                                RESET_COUNT_SIZE,
                                                &Em_EEPROM_context);
-        HandleError(eepromReturnValue, "Emulated EEPROM Write failed \r\n");
+        handle_error(eeprom_return_value, "Emulated EEPROM Write failed \r\n");
     }
 
     /* Read contents of EEPROM after write. */
-    eepromReturnValue = Cy_Em_EEPROM_Read(LOGICAL_EEPROM_START,
-                                          eepromReadArray, LOGICAL_EEPROM_SIZE,
+    eeprom_return_value = Cy_Em_EEPROM_Read(LOGICAL_EEPROM_START,
+                                          eeprom_read_array, LOGICAL_EEPROM_SIZE,
                                           &Em_EEPROM_context);
-    HandleError(eepromReturnValue, "Emulated EEPROM Read failed \r\n" );
+    handle_error(eeprom_return_value, "Emulated EEPROM Read failed \r\n" );
 
     for(count = 0; count < LOGICAL_EEPROM_SIZE ; count++)
     {
-        printf("%c",eepromReadArray[count]);
+        printf("%c",eeprom_read_array[count]);
     }
     printf("\r\n");
 
@@ -283,7 +281,7 @@ int main(void)
 }
 
 /*******************************************************************************
-* Function Name: HandleError
+* Function Name: handle_error
 ********************************************************************************
 *
 * Summary:
@@ -298,7 +296,7 @@ int main(void)
 * Note: If error occurs interrupts are disabled.
 *
 *******************************************************************************/
-void HandleError(uint32_t status, char *message)
+void handle_error(uint32_t status, char *message)
 {
 
     if(CY_EM_EEPROM_SUCCESS != status)
